@@ -30,7 +30,9 @@ DocPreprocessor.prototype.preprocessNode = function (node) {
 		return this.preprocessColumns(node);
 	} else if (node.stack) {
 		return this.preprocessVerticalContainer(node);
-	} else if (node.ul) {
+	} else if (node.layers) {
+		return this.preprocessLayers(node);
+	}  else if (node.ul) {
 		return this.preprocessList(node);
 	} else if (node.ol) {
 		return this.preprocessList(node);
@@ -63,6 +65,16 @@ DocPreprocessor.prototype.preprocessColumns = function (node) {
 
 DocPreprocessor.prototype.preprocessVerticalContainer = function (node) {
 	var items = node.stack;
+
+	for (var i = 0, l = items.length; i < l; i++) {
+		items[i] = this.preprocessNode(items[i]);
+	}
+
+	return node;
+};
+
+DocPreprocessor.prototype.preprocessLayers = function (node) {
+	var items = node.layers;
 
 	for (var i = 0, l = items.length; i < l; i++) {
 		items[i] = this.preprocessNode(items[i]);

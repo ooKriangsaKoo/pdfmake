@@ -100,8 +100,9 @@ DocumentContext.prototype.completeColumnGroup = function () {
 	this.x = saved.x;
 	this.y = saved.bottomMost.y;
 	this.page = saved.bottomMost.page;
-	this.availableWidth = saved.availableWidth;
+	this.height = saved.bottomMost.y - saved.y;
 	this.availableHeight = saved.bottomMost.availableHeight;
+	this.availableWidth = saved.availableWidth;
 	this.lastColumnWidth = saved.lastColumnWidth;
 };
 

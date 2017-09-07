@@ -57,6 +57,18 @@ PageElementWriter.prototype.addFragment = function (fragment, useBlockXOffset, u
 	}
 };
 
+PageElementWriter.prototype.removeBeginClip = function(item) {
+	return this.writer.removeBeginClip(item);
+};
+
+PageElementWriter.prototype.beginVerticalAlign = function(verticalAlign) {
+	return this.writer.beginVerticalAlign(verticalAlign);
+};
+
+PageElementWriter.prototype.endVerticalAlign = function(verticalAlign) {
+	return this.writer.endVerticalAlign(verticalAlign);
+};
+
 PageElementWriter.prototype.moveToNextPage = function (pageOrientation) {
 
 	var nextPage = this.writer.context.moveToNextPage(pageOrientation);
