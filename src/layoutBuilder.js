@@ -37,6 +37,7 @@ function LayoutBuilder(pageSize, pageMargins, imageMeasure) {
 	this.imageMeasure = imageMeasure;
 	this.verticalAlignItemStack = [];
 	this.tableLayouts = {};
+	this.heightHeaderAndFooter = {};
 }
 
 LayoutBuilder.prototype.registerTableLayouts = function (tableLayouts) {
@@ -129,15 +130,15 @@ LayoutBuilder.prototype.layoutDocument = function (docStructure, fontProvider, s
 
 LayoutBuilder.prototype.tryLayoutDocument = function (docStructure, fontProvider, styleDictionary, defaultStyle, background, header, footer, images, watermark, pageBreakBeforeFct) {
 
-	//----------get height layout header and footer modify by tak------------
+	//----------get height layout header and footer ^^modify by tak^^------------
 	this.linearNodeList = [];
 	this.writer = new PageElementWriter(
 		new DocumentContext(this.pageSize, this.pageMargins), this.tracker);
-	this.height = this.addHeadersAndFooters(header, footer);
+	this.heightHeaderAndFooter = this.addHeadersAndFooters(header, footer);
 
-	if(this.height.header != undefined)
-		this.pageMargins.top = this.height.header +1;
-	//----------get height layout header and footer modify by tak------------
+	if(this.heightHeaderAndFooter.header != undefined)
+		this.pageMargins.top = this.heightHeaderAndFooter.header +1;
+	//----------get height layout header and footer ^^modify by tak^^------------
 
 
 	this.linearNodeList = [];
@@ -154,7 +155,7 @@ LayoutBuilder.prototype.tryLayoutDocument = function (docStructure, fontProvider
 
 	this.addBackground(background);
 	this.processNode(docStructure);
-	this.addHeadersAndFooters(header, footer, this.height.header +1, this.height.footer + 1);
+	this.addHeadersAndFooters(header, footer, this.heightHeaderAndFooter.header + 1, this.heightHeaderAndFooter.footer + 1);
 	/* jshint eqnull:true */
 	if (watermark != null) {
 		this.addWatermark(watermark, fontProvider, defaultStyle);
@@ -237,16 +238,23 @@ LayoutBuilder.prototype.addHeadersAndFooters = function (header, footer, headerH
 		};
 	};
 
-	if (isFunction(header)) {
-		headerHeight = this.addDynamicRepeatable(header, headerSizeFct);
-	} else if (header) {
-		headerHeight = this.addStaticRepeatable(header, headerSizeFct);
+	//---check availableHeight for add footer last page ^^modify by tak^^---
+	if(footeHeight != undefined && typeof footeHeight == "number"){
+		if(this.writer.context().availableHeight < footeHeight){
+			this.writer.moveToNextPage();
+		}
 	}
 
 	if (isFunction(footer)) {
 		footeHeight = this.addDynamicRepeatable(footer, footerSizeFct);
 	} else if (footer) {
 		footeHeight = this.addStaticRepeatable(footer, footerSizeFct);
+	}
+
+	if (isFunction(header)) {
+		headerHeight = this.addDynamicRepeatable(header, headerSizeFct);
+	} else if (header) {
+		headerHeight = this.addStaticRepeatable(header, headerSizeFct);
 	}
 
 	return { header:headerHeight , footer:footeHeight };
