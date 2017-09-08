@@ -129,6 +129,17 @@ LayoutBuilder.prototype.layoutDocument = function (docStructure, fontProvider, s
 
 LayoutBuilder.prototype.tryLayoutDocument = function (docStructure, fontProvider, styleDictionary, defaultStyle, background, header, footer, images, watermark, pageBreakBeforeFct) {
 
+	//----------get height layout header and footer modify by tak------------
+	this.linearNodeList = [];
+	this.writer = new PageElementWriter(
+		new DocumentContext(this.pageSize, this.pageMargins), this.tracker);
+	this.height = this.addHeadersAndFooters(header, footer);
+
+	if(this.height.header != undefined)
+		this.pageMargins.top = this.height.header +1;
+	//----------get height layout header and footer modify by tak------------
+
+
 	this.linearNodeList = [];
 	docStructure = this.docPreprocessor.preprocessDocument(docStructure);
 	docStructure = this.docMeasure.measureDocument(docStructure);
@@ -143,7 +154,7 @@ LayoutBuilder.prototype.tryLayoutDocument = function (docStructure, fontProvider
 
 	this.addBackground(background);
 	this.processNode(docStructure);
-	this.addHeadersAndFooters(header, footer);
+	this.addHeadersAndFooters(header, footer, this.height.header +1, this.height.footer + 1);
 	/* jshint eqnull:true */
 	if (watermark != null) {
 		this.addWatermark(watermark, fontProvider, defaultStyle);
@@ -170,9 +181,11 @@ LayoutBuilder.prototype.addBackground = function (background) {
 };
 
 LayoutBuilder.prototype.addStaticRepeatable = function (headerOrFooter, sizeFunction) {
-	this.addDynamicRepeatable(function () {
+	var height = this.addDynamicRepeatable(function () {
 		return JSON.parse(JSON.stringify(headerOrFooter)); // copy to new object
 	}, sizeFunction);
+	
+	return height;
 };
 
 LayoutBuilder.prototype.addDynamicRepeatable = function (nodeGetter, sizeFunction) {
@@ -191,38 +204,52 @@ LayoutBuilder.prototype.addDynamicRepeatable = function (nodeGetter, sizeFunctio
 			this.writer.commitUnbreakableBlock(sizes.x, sizes.y);
 		}
 	}
+
+	return node._height;
 };
 
-LayoutBuilder.prototype.addHeadersAndFooters = function (header, footer) {
+LayoutBuilder.prototype.addHeadersAndFooters = function (header, footer, headerHeight, footeHeight) {
+	var headerHeight;
+	var footeHeight;
+
+
 	var headerSizeFct = function (pageSize, pageMargins) {
+		if(headerHeight == undefined)
+			headerHeight = pageSize.height;
+
 		return {
 			x: 0,
 			y: 0,
 			width: pageSize.width,
-			height: pageMargins.top
+			height: headerHeight
 		};
 	};
 
 	var footerSizeFct = function (pageSize, pageMargins) {
+		if(footeHeight == undefined)
+			footeHeight = pageSize.height;
+
 		return {
 			x: 0,
-			y: pageSize.height - pageMargins.bottom,
+			y: pageSize.height - footeHeight,
 			width: pageSize.width,
-			height: pageMargins.bottom
+			height: footeHeight
 		};
 	};
 
 	if (isFunction(header)) {
-		this.addDynamicRepeatable(header, headerSizeFct);
+		headerHeight = this.addDynamicRepeatable(header, headerSizeFct);
 	} else if (header) {
-		this.addStaticRepeatable(header, headerSizeFct);
+		headerHeight = this.addStaticRepeatable(header, headerSizeFct);
 	}
 
 	if (isFunction(footer)) {
-		this.addDynamicRepeatable(footer, footerSizeFct);
+		footeHeight = this.addDynamicRepeatable(footer, footerSizeFct);
 	} else if (footer) {
-		this.addStaticRepeatable(footer, footerSizeFct);
+		footeHeight = this.addStaticRepeatable(footer, footerSizeFct);
 	}
+
+	return { header:headerHeight , footer:footeHeight };
 };
 
 LayoutBuilder.prototype.addWatermark = function (watermark, fontProvider, defaultStyle) {
